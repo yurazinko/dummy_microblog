@@ -16,7 +16,7 @@ class LoggedIn extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      jokes: []
+      entries: []
     }
   }
 
@@ -29,9 +29,42 @@ class LoggedIn extends React.Component {
           <h2>Dummy microblog</h2>
           <p>Lets write something</p>
           <div className="row">
-            {this.state.jokes.map(function(joke, i){
-              return (<Joke key={i} joke={joke} />);
+            {this.state.entries.map(function(entry, i){
+              return (<Entry key={i} entry={entry} />);
             })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+class Entry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      liked: ""
+    }
+    this.like = this.like.bind(this);
+  }
+
+  like() {
+    // ... we'll add this block later
+  }
+
+  render() {
+    return (
+      <div className="col-xs-4">
+        <div className="panel panel-default">
+          <div className="panel-heading">#{this.props.entry.id} <span className="pull-right">{this.state.liked}</span></div>
+          <div className="panel-body">
+            {this.props.entry.entry}
+          </div>
+          <div className="panel-footer">
+            {this.props.entry.likes} Likes &nbsp;
+            <a onClick={this.like} className="btn btn-default">
+              <span className="glyphicon glyphicon-thumbs-up"></span>
+            </a>
           </div>
         </div>
       </div>
@@ -48,3 +81,5 @@ class App extends React.Component {
     }
   }
 }
+
+ReactDOM.render(<App />, document.getElementById("app"));
