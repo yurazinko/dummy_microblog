@@ -2,44 +2,49 @@ package main
 
 import (
   "net/http"
+  "strconv"
 
   "github.com/gin-gonic/contrib/static"
   "github.com/gin-gonic/gin"
 )
 
-// JokeHandler retrieves a list of available jokes
-func JokeHandler(c *gin.Context) {
+func ShowEntriesHandler(c *gin.Context) {
   c.Header("Content-Type", "application/json")
-  c.JSON(http.StatusOK, gin.H {
-    "message":"Jokes handler not implemented yet",
-  })
+  c.JSON(http.StatusOK, entries)
 }
 
-func LikeJoke(c *gin.Context) {
-  c.Header("Content-Type", "application/json")
-  c.JSON(http.StatusOK, gin.H {
-    "message":"LikeJoke handler not implemented yet",
-  })
+func LikeEntry(c *gin.Context) {
+  // confirm entry ID sent is valid
+  if entryid, err := strconv.Atoi(c.Param("entryID")); err == nil {
+    // find entry, and increment likes
+    for i := 0; i < len(entries); i++ {
+      if entries[i].ID == entryid {
+        entries[i].Likes += 1
+      }
+    }
+
+    // return a pointer to the updated entries list
+    c.JSON(http.StatusOK, &entries)
+  } else {
+    // entry ID is invalid
+    c.AbortWithStatus(http.StatusNotFound)
+  }
 }
 
-// Let's create our Jokes struct. This will contain information about a Joke
-
-// Joke contains information about a single Joke
-type Joke struct {
-  ID     int     `json:"id" binding:"required"`
-  Likes  int     `json:"likes"`
-  Joke   string  `json:"joke" binding:"required"`
+type Entry struct {
+  ID      int     `json:"id" binding:"required"`
+  Likes   int     `json:"likes"`
+  Entry   string  `json:"Entry" binding:"required"`
 }
 
-// We'll create a list of jokes
-var jokes = []Joke{
-  Joke{1, 0, "Did you hear about the restaurant on the moon? Great food, no atmosphere."},
-  Joke{2, 0, "What do you call a fake noodle? An Impasta."},
-  Joke{3, 0, "How many apples grow on a tree? All of them."},
-  Joke{4, 0, "Want to hear a joke about paper? Nevermind it's tearable."},
-  Joke{5, 0, "I just watched a program about beavers. It was the best dam program I've ever seen."},
-  Joke{6, 0, "Why did the coffee file a police report? It got mugged."},
-  Joke{7, 0, "How does a penguin build it's house? Igloos it together."},
+var entries = []Entry{
+  Entry{1, 0, "Lorem Ipsum is simply dummy text of the printing and typesetting industry."},
+  Entry{2, 0, "It is a long established fact that a reader will be distracted by the readable content."},
+  Entry{3, 0, "There is no one who loves pain, who seeks after it and wants to have it, simply because it is pain.."},
+  Entry{4, 0, "Can you help translate this site into a foreign language?"},
+  Entry{5, 0, "Please email us with details if you can help.."},
+  Entry{6, 0, "here are now a set of mock banners available here in three colours and in a range of banner sizes."},
+  Entry{7, 0, "Thank you for your support."},
 }
 
 func main() {
@@ -50,7 +55,7 @@ func main() {
   router.Use(static.Serve("/", static.LocalFile("./views", true)))
 
   // Setup route group for the API
-  api := router.Group("/api")
+  api := router.Group("/")
   {
     api.GET("/", func(c *gin.Context) {
       c.JSON(http.StatusOK, gin.H {
@@ -59,11 +64,8 @@ func main() {
     })
   }
 
-  // Our API will consit of just two routes
-  // /jokes - which will retrieve a list of jokes a user can see
-  // /jokes/like/:jokeID - which will capture likes sent to a particular joke
-  api.GET("/jokes", JokeHandler)
-  api.POST("/jokes/like/:jokeID", LikeJoke)
+  api.GET("/entries", ShowEntriesHandler)
+  api.POST("/entries/like/:EntryID", LikeEntry)
 
   // Start and run the server
   router.Run(":3000")
