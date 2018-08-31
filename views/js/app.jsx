@@ -1,4 +1,21 @@
 class Home extends React.Component {
+  constructor(props) {
+    super(props);
+    this.authenticate = this.authenticate.bind(this);
+  }
+
+  authenticate() {
+    this.WebAuth = new auth0.WebAuth({
+      domain: AUTH0_DOMAIN,
+      clientID: AUTH0_CLIENT_ID,
+      scope: "openid profile",
+      audience: AUTH0_API_AUDIENCE,
+      responseType: "token id_token",
+      redirectUri: AUTH0_CALLBACK_URL
+    });
+    this.WebAuth.authorize();
+  }
+
   render() {
     return (
       <div className="container">
@@ -18,6 +35,28 @@ class LoggedIn extends React.Component {
     this.state = {
       entries: []
     }
+
+    this.serverRequest = this.serverRequest.bind(this);
+    this.logout = this.logout.bind(this);
+  }
+
+  logout() {
+    localStorage.removeItem("id_token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("profile");
+    location.reload();
+  }
+
+  serverRequest() {
+    $.get("http://localhost:3000/entries", res => {
+      this.setState({
+        jokes: res
+      });
+    });
+  }
+
+  componentDidMount() {
+    this.serverRequest();
   }
 
   render() {
@@ -46,10 +85,24 @@ class Entry extends React.Component {
       liked: ""
     }
     this.like = this.like.bind(this);
+    this.serverRequest = this.serverRequest.bind(this);
   }
 
   like() {
-    // ... we'll add this block later
+    let entry = this.props.entry;
+    this.serverRequest(entry);
+  }
+
+  serverRequest(joke) {
+    $.post(
+      "http://localhost:3000/entries/like/" + entry.id,
+      { like: 1 },
+      res => {
+        console.log("res... ", res);
+        this.setState({ liked: "Liked!", entries: res });
+        this.props.entries = res;
+      }
+    );
   }
 
   render() {
@@ -73,6 +126,62 @@ class Entry extends React.Component {
 }
 
 class App extends React.Component {
+  parseHash() {
+    this.auth0 = new auth0.WebAuth({
+      domain: AUTH0_DOMAIN,
+      clientID: AUTH0_CLIENT_ID
+    });
+    this.auth0.parseHash(window.location.hash, (err, authResult) => {
+      if (err) {
+        return console.log(err);
+      }
+      if (
+        authResult !== null &&
+        authResult.accessToken !== null &&
+        authResult.idToken !== null
+      ) {
+        localStorage.setItem("access_token", authResult.accessToken);
+        localStorage.setItem("id_token", authResult.idToken);
+        localStorage.setItem(
+          "profile",
+          JSON.stringify(authResult.idTokenPayload)
+        );
+        window.location = window.location.href.substr(
+          0,
+          window.location.href.indexOf("#")
+        );
+      }
+    });
+  }
+
+  setup() {
+    $.ajaxSetup({
+      beforeSend: (r) => {
+        if (localStorage.getItem("access_token")) {
+          r.setRequestHeader(
+            "Authorization",
+            "Bearer " + localStorage.getItem("access_token")
+          );
+        }
+      }
+    });
+  }
+
+  setState() {
+    let idToken = localStorage.getItem("id_token");
+    if (idToken) {
+      this.loggedIn = true;
+    } else {
+      this.loggedIn = false;
+    }
+  }
+
+  componentWillMount() {
+    this.setup();
+    this.parseHash();
+    this.setState();
+  }
+
   render() {
     if (this.loggedIn) {
       return (<LoggedIn />);
