@@ -1,3 +1,8 @@
+const AUTH0_CLIENT_ID = 'CZ2TfmxJ6EFErPnRH1dPUH43riOzGnP1';
+const AUTH0_DOMAIN = 'yurazinko.auth0.com';
+const AUTH0_CALLBACK_URL = window.location.href;
+const AUTH0_API_AUDIENCE = 'dummy_microblog';
+
 class Home extends React.Component {
   constructor(props) {
     super(props);

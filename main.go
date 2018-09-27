@@ -120,32 +120,35 @@ func getPemCert(token *jwt.Token) (string, error) {
 
 func main() {
   jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-  ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-    aud := os.Getenv("AUTH0_API_AUDIENCE")
-    checkAudience := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
-    if !checkAudience {
-      return token, errors.New("Invalid audience.")
-    }
-    // verify iss claim
-    iss := os.Getenv("AUTH0_DOMAIN")
-    checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
-    if !checkIss {
-      return token, errors.New("Invalid issuer.")
-    }
+    ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+      aud := os.Getenv("AUTH0_API_AUDIENCE")
+      checkAudience := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
 
-    cert, err := getPemCert(token)
-    if err != nil {
-      log.Fatalf("could not get cert: %+v", err)
-    }
+      if !checkAudience {
+        return token, errors.New("Invalid audience.")
+      }
 
-    result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
-    return result, nil
-  },
-  SigningMethod: jwt.SigningMethodRS256,
-})
+      // verify iss claim
+      iss := os.Getenv("AUTH0_DOMAIN")
+      checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
+      if !checkIss {
+        return token, errors.New("Invalid issuer.")
+      }
 
-// register our actual jwtMiddleware
-jwtMiddleWare = jwtMiddleware
+      cert, err := getPemCert(token)
+      if err != nil {
+
+        log.Fatalf("could not get cert: %+v", err)
+      }
+
+      result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+      return result, nil
+    },
+    SigningMethod: jwt.SigningMethodRS256,
+  })
+
+  // register our actual jwtMiddleware
+  jwtMiddleWare = jwtMiddleware
   // Set the router as the default one shipped with Gin
   router := gin.Default()
 
